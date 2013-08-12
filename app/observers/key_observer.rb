@@ -3,7 +3,8 @@ class KeyObserver < BaseObserver
     GitlabShellWorker.perform_async(
       :add_key,
       key.shell_id,
-      key.key
+      key.key,
+      current_user.username
     )
 
     notification.new_key(key)
