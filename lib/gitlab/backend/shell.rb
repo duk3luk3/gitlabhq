@@ -126,8 +126,16 @@ module Gitlab
     # Ex.
     #   add_key("key-42", "sha-rsa ...")
     #
-    def add_key(key_id, key_content)
-      system "#{gitlab_shell_user_home}/gitlab-shell/bin/gitlab-keys", "add-key", key_id, key_content
+    def add_key(key_id, key_content, user=nil, groups=nil)
+
+      if groups then
+        system "#{gitlab_shell_user_home}/gitlab-shell/bin/gitlab-keys add-key '#{key_id}' '#{key_content}' '#{user}' '#{groups.join("' '")}'"
+      elsif user then
+        system "#{gitlab_shell_user_home}/gitlab-shell/bin/gitlab-keys", "add-key", key_id, key_content, user
+      else
+        system "#{gitlab_shell_user_home}/gitlab-shell/bin/gitlab-keys", "add-key", key_id, key_content
+      end
+
     end
 
     # Remove ssh key from gitlab shell
@@ -135,8 +143,12 @@ module Gitlab
     # Ex.
     #   remove_key("key-342", "sha-rsa ...")
     #
-    def remove_key(key_id, key_content)
-      system "#{gitlab_shell_user_home}/gitlab-shell/bin/gitlab-keys", "rm-key", key_id, key_content
+    def remove_key(key_id, key_content, user=nil)
+      if user then
+        system "#{gitlab_shell_user_home}/gitlab-shell/bin/gitlab-keys", "rm-key", key_id, key_content, user
+      else
+        system "#{gitlab_shell_user_home}/gitlab-shell/bin/gitlab-keys", "rm-key", key_id, key_content
+      end
     end
 
     # Remove all ssh keys from gitlab shell

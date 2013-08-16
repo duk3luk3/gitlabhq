@@ -4,7 +4,8 @@ class KeyObserver < BaseObserver
       :add_key,
       key.shell_id,
       key.key,
-      current_user.username
+      current_user.username,
+      current_user.groups.map(&:name)
     )
 
     notification.new_key(key)
@@ -15,6 +16,7 @@ class KeyObserver < BaseObserver
       :remove_key,
       key.shell_id,
       key.key,
+      current_user.username
     )
   end
 end
