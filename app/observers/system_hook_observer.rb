@@ -1,5 +1,5 @@
 class SystemHookObserver < BaseObserver
-  observe :user, :project, :users_project
+  observe :user, :project, :users_project, :key
 
   def after_create(model)
     SystemHooksService.execute_hooks_for(model, :create)
