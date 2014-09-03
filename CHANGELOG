@@ -16,6 +16,7 @@ v 7.3.0
   - Add system hook for ssh key changes
   - Add blob permalink link (Ciro Santilli)
   - Create annotated tags through UI and API (Sean Edge)
+  - Add force_random_password option to user POST api
 
 v 7.2.0
   - Explore page
