@@ -85,7 +85,6 @@ module API
         if force_random
           user.created_by_id = current_user.id
           user.password_expires_at = nil
-          user.generate_password
           user.generate_reset_token
           user.skip_confirmation!
         end
