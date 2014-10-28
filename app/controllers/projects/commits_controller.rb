@@ -5,7 +5,7 @@ class Projects::CommitsController < Projects::ApplicationController
 
   # Authorize
   before_filter :authorize_read_project!
-  before_filter :authorize_code_access!
+  before_filter :authorize_download_code!
   before_filter :require_non_empty_project
 
   def show
@@ -17,7 +17,7 @@ class Projects::CommitsController < Projects::ApplicationController
         group(:commit_id).count
 
     respond_to do |format|
-      format.html # index.html.erb
+      format.html
       format.json { pager_json("projects/commits/_commits", @commits.size) }
       format.atom { render layout: false }
     end

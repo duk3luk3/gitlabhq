@@ -3,7 +3,7 @@
 %hr
 %div
   .dashboard-intro-icon
-    %i.icon-bookmark-empty
+    %i.fa.fa-bookmark-o
   %div
     %p.slead
       You don't have access to any projects right now.
@@ -23,7 +23,7 @@
   %hr
   %div
     .dashboard-intro-icon
-      %i.icon-group
+      %i.fa.fa-users
     %div
       %p.slead
         You can create a group for several dependent projects.
@@ -37,7 +37,7 @@
   %hr
   %div
     .dashboard-intro-icon
-      %i.icon-globe
+      %i.fa.fa-globe
     %div
       %p.slead
         There are
@@ -46,5 +46,5 @@
         %br
         Public projects are an easy way to allow everyone to have read-only access.
       .link_holder
-        = link_to explore_projects_path, class: "btn btn-new" do
+        = link_to trending_explore_projects_path, class: "btn btn-new" do
           Browse public projects »

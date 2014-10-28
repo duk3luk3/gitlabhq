@@ -6,107 +6,101 @@
 module Gitlab
   module OAuth
     class User
-      class << self
-        attr_reader :auth
+      attr_accessor :auth_hash, :gl_user
 
-        def find(auth)
-          @auth = auth
-          find_by_uid_and_provider
+      def initialize(auth_hash)
+        self.auth_hash = auth_hash
+      end
+
+      def persisted?
+        gl_user.try(:persisted?)
+      end
+
+      def new?
+        !persisted?
+      end
+
+      def valid?
+        gl_user.try(:valid?)
+      end
+
+      def save
+        unauthorized_to_create unless gl_user
+
+        if needs_blocking?
+          gl_user.save!
+          gl_user.block
+        else
+          gl_user.save!
         end
 
-        def create(auth)
-          @auth = auth
-          password = Devise.friendly_token[0, 8].downcase
-          opts = {
-            extern_uid: uid,
-            provider: provider,
-            name: name,
-            username: username,
-            email: email,
-            password: password,
-            password_confirmation: password,
-          }
+        log.info "(OAuth) saving user #{auth_hash.email} from login with extern_uid => #{auth_hash.uid}"
+        gl_user
+      rescue ActiveRecord::RecordInvalid => e
+        log.info "(OAuth) Error saving user: #{gl_user.errors.full_messages}"
+        return self, e.record.errors
+      end
 
-          user = model.build_user(opts)
+      def gl_user
+        @user ||= find_by_uid_and_provider
+
+        if signup_enabled?
+          @user ||= build_new_user
+        end
+
+        @user
+      end
+
+      protected
+
+      def needs_blocking?
+        new? && block_after_signup?
+      end
+
+      def signup_enabled?
+        Gitlab.config.omniauth.allow_single_sign_on
+      end
+
+      def block_after_signup?
+        Gitlab.config.omniauth.block_auto_created_users
+      end
+
+      def auth_hash=(auth_hash)
+        @auth_hash = AuthHash.new(auth_hash)
+      end
+
+      def find_by_uid_and_provider
+        model.where(provider: auth_hash.provider, extern_uid: auth_hash.uid).last
+      end
+
+      def build_new_user
+        model.new(user_attributes).tap do |user|
           user.skip_confirmation!
-
-          # Services like twitter and github does not return email via oauth
-          # In this case we generate temporary email and force user to fill it later
-          if user.email.blank?
-            user.generate_tmp_oauth_email
-          elsif provider != "ldap"
-            # Google oauth returns email but dont return nickname
-            # So we use part of email as username for new user
-            # For LDAP, username is already set to the user's
-            # uid/userid/sAMAccountName.
-            email_username = email.match(/^[^@]*/)[0]
-            # Strip apostrophes since they are disallowed as part of username
-            user.username = email_username.gsub("'", "")
-          end
-
-          begin
-            user.save!
-          rescue ActiveRecord::RecordInvalid => e
-            log.info "(OAuth) Email #{e.record.errors[:email]}. Username #{e.record.errors[:username]}"
-            return nil, e.record.errors
-          end
-
-          log.info "(OAuth) Creating user #{email} from login with extern_uid => #{uid}"
-
-          if Gitlab.config.omniauth['block_auto_created_users'] && !ldap?
-            user.block
-          end
-
-          user
         end
+      end
 
-        private
+      def user_attributes
+        {
+          extern_uid: auth_hash.uid,
+          provider: auth_hash.provider,
+          name: auth_hash.name,
+          username: auth_hash.username,
+          email: auth_hash.email,
+          password: auth_hash.password,
+          password_confirmation: auth_hash.password,
+        }
+      end
 
-        def find_by_uid_and_provider
-          model.where(provider: provider, extern_uid: uid).last
-        end
+      def log
+        Gitlab::AppLogger
+      end
 
-        def uid
-          auth.uid.to_s
-        end
+      def model
+        ::User
+      end
 
-        def email
-          return unless auth.info.respond_to?(:email)
-          auth.info.email.downcase unless auth.info.email.nil?
-        end
-
-        def name
-          if auth.info.name.nil?
-            "#{auth.info.first_name} #{auth.info.last_name}".force_encoding('utf-8')
-          else
-            auth.info.name.to_s.force_encoding('utf-8')
-          end
-        end
-
-        def username
-          return unless auth.info.respond_to?(:nickname)
-          auth.info.nickname.to_s.force_encoding("utf-8")
-        end
-
-        def provider
-          auth.provider
-        end
-
-        def log
-          Gitlab::AppLogger
-        end
-
-        def model
-          ::User
-        end
-
-        def raise_error(message)
-          raise OmniAuth::Error, "(OAuth) " + message
-        end
-
-        def ldap?
-          provider == 'ldap'
-        end
+      def raise_unauthorized_to_create
+        raise StandardError.new("Unauthorized to create user, signup disabled for #{auth_hash.provider}")
       end
     end
   end

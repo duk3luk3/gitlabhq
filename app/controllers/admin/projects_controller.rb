@@ -16,10 +16,10 @@ class Admin::ProjectsController < Admin::ApplicationController
 
   def show
     if @group
-      @group_members = @group.members.order("group_access DESC").page(params[:group_members_page]).per(30)
+      @group_members = @group.members.order("access_level DESC").page(params[:group_members_page]).per(30)
     end
 
-    @project_members = @project.users_projects.page(params[:project_members_page]).per(30)
+    @project_members = @project.project_members.page(params[:project_members_page]).per(30)
   end
 
   def transfer
@@ -31,17 +31,11 @@ class Admin::ProjectsController < Admin::ApplicationController
   protected
 
   def project
-    id = params[:project_id] || params[:id]
-
-    @project = Project.find_with_namespace(id)
+    @project = Project.find_with_namespace(params[:id])
     @project || render_404
   end
 
   def group
-    @group ||= project.group
-  end
-
-  def repository
-    @repository ||= project.repository
+    @group ||= @project.group
   end
 end

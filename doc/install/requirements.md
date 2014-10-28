@@ -7,9 +7,9 @@
 - Ubuntu
 - Debian
 - CentOS
-- RedHat Enterprise Linux
-- Scientific Linux
-- Oracle Linux
+- RedHat Enterprise Linux (please use the CentOS packages and instructions)
+- Scientific Linux (please use the CentOS packages and instructions)
+- Oracle Linux (please use the CentOS packages and instructions)
 
 For the installations options please see [the installation page on the GitLab website](https://about.gitlab.com/installation/).
 
@@ -34,7 +34,7 @@ Please consider using a virtual machine to run GitLab.
 
 GitLab requires Ruby (MRI) 2.0 or 2.1
 You will have to use the standard MRI implementation of Ruby.
-We love [JRuby](http://jruby.org/) and [Rubinius](http://rubini.us/)) but GitLab needs several Gems that have native extensions.
+We love [JRuby](http://jruby.org/) and [Rubinius](http://rubini.us/) but GitLab needs several Gems that have native extensions.
 
 ## Hardware requirements
 
@@ -85,12 +85,12 @@ Redis stores all user sessions and the background task queue.
 The storage requirements for Redis are minimal, about 25kB per user.
 Sidekiq processes the background jobs with a multithreaded process.
 This process starts with the entire Rails stack (200MB+) but it can grow over time due to memory leaks.
-On a very active server (10.000 active users) the Sidekiq process can use 1GB+ of memory.
+On a very active server (10,000 active users) the Sidekiq process can use 1GB+ of memory.
 
-## Supported webbrowsers
+## Supported web browsers
 
 - Chrome (Latest stable version)
-- Firefox (Latest released version) 
+- Firefox (Latest released version and [latest ESR version](https://www.mozilla.org/en-US/firefox/organizations/)) 
 - Safari 7+ (known problem: required fields in html5 do not work)
 - Opera (Latest released version)
 - IE 10+

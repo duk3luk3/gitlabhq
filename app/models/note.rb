@@ -47,7 +47,7 @@ class Note < ActiveRecord::Base
   scope :for_commit_id, ->(commit_id) { where(noteable_type: "Commit", commit_id: commit_id) }
   scope :inline, ->{ where("line_code IS NOT NULL") }
   scope :not_inline, ->{ where(line_code: [nil, '']) }
-
+  scope :system, ->{ where(system: true) }
   scope :common, ->{ where(noteable_type: ["", nil]) }
   scope :fresh, ->{ order("created_at ASC, id ASC") }
   scope :inc_author_project, ->{ includes(:project, :author) }
@@ -70,13 +70,17 @@ class Note < ActiveRecord::Base
       )
     end
 
-    # +noteable+ was referenced from +mentioner+, by including GFM in either +mentioner+'s description or an associated Note.
-    # Create a system Note associated with +noteable+ with a GFM back-reference to +mentioner+.
+    # +noteable+ was referenced from +mentioner+, by including GFM in either
+    # +mentioner+'s description or an associated Note.
+    # Create a system Note associated with +noteable+ with a GFM back-reference
+    # to +mentioner+.
     def create_cross_reference_note(noteable, mentioner, author, project)
+      gfm_reference = mentioner_gfm_ref(noteable, mentioner, project)
+
       note_options = {
         project: project,
         author: author,
-        note: "_mentioned in #{mentioner.gfm_reference}_",
+        note: cross_reference_note_content(gfm_reference),
         system: true
       }
 
@@ -117,6 +121,25 @@ class Note < ActiveRecord::Base
       })
     end
 
+    def create_new_commits_note(noteable, project, author, commits)
+      commits_text = ActionController::Base.helpers.pluralize(commits.size, 'new commit')
+      body = "Added #{commits_text}:\n\n"
+
+      commits.each do |commit|
+        message = "* #{commit.short_id} - #{commit.title}"
+        body << message
+        body << "\n"
+      end
+
+      create(
+        noteable: noteable,
+        project: project,
+        author: author,
+        note: body,
+        system: true
+      )
+    end
+
     def discussions_from_notes(notes)
       discussion_ids = []
       discussions = []
@@ -144,11 +167,85 @@ class Note < ActiveRecord::Base
 
     # Determine whether or not a cross-reference note already exists.
     def cross_reference_exists?(noteable, mentioner)
-      where(noteable_id: noteable.id, system: true, note: "_mentioned in #{mentioner.gfm_reference}_").any?
+      gfm_reference = mentioner_gfm_ref(noteable, mentioner)
+      notes = if noteable.is_a?(Commit)
+                where(commit_id: noteable.id)
+              else
+                where(noteable_id: noteable.id)
+              end
+
+      notes.where('note like ?', cross_reference_note_content(gfm_reference)).
+        system.any?
     end
 
     def search(query)
       where("note like :query", query: "%#{query}%")
+    end
+
+    def cross_reference_note_prefix
+      '_mentioned in '
+    end
+
+    private
+
+    def cross_reference_note_content(gfm_reference)
+      cross_reference_note_prefix + "#{gfm_reference}_"
+    end
+
+    # Prepend the mentioner's namespaced project path to the GFM reference for
+    # cross-project references.  For same-project references, return the
+    # unmodified GFM reference.
+    def mentioner_gfm_ref(noteable, mentioner, project = nil)
+      if mentioner.is_a?(Commit)
+        if project.nil?
+          return mentioner.gfm_reference.sub('commit ', 'commit %')
+        else
+          mentioning_project = project
+        end
+      else
+        mentioning_project = mentioner.project
+      end
+
+      noteable_project_id = noteable_project_id(noteable, mentioning_project)
+
+      full_gfm_reference(mentioning_project, noteable_project_id, mentioner)
+    end
+
+    # Return the ID of the project that +noteable+ belongs to, or nil if
+    # +noteable+ is a commit and is not part of the project that owns
+    # +mentioner+.
+    def noteable_project_id(noteable, mentioning_project)
+      if noteable.is_a?(Commit)
+        if mentioning_project.repository.commit(noteable.id)
+          # The noteable commit belongs to the mentioner's project
+          mentioning_project.id
+        else
+          nil
+        end
+      else
+        noteable.project.id
+      end
+    end
+
+    # Return the +mentioner+ GFM reference.  If the mentioner and noteable
+    # projects are not the same, add the mentioning project's path to the
+    # returned value.
+    def full_gfm_reference(mentioning_project, noteable_project_id, mentioner)
+      if mentioning_project.id == noteable_project_id
+        mentioner.gfm_reference
+      else
+        if mentioner.is_a?(Commit)
+          mentioner.gfm_reference.sub(
+            /(commit )/,
+            "\\1#{mentioning_project.path_with_namespace}@"
+          )
+        else
+          mentioner.gfm_reference.sub(
+            /(issue |merge request )/,
+            "\\1#{mentioning_project.path_with_namespace}"
+          )
+        end
+      end
     end
   end
 
@@ -158,6 +255,10 @@ class Note < ActiveRecord::Base
       project.users.find_by(name: noteable.author_name)
   rescue
     nil
+  end
+
+  def cross_reference?
+    note.start_with?(self.class.cross_reference_note_prefix)
   end
 
   def find_diff
@@ -190,9 +291,10 @@ class Note < ActiveRecord::Base
     noteable.diffs.each do |mr_diff|
       next unless mr_diff.new_path == self.diff.new_path
 
-      Gitlab::DiffParser.new(mr_diff.diff.lines.to_a, mr_diff.new_path).
-        each do |full_line, type, line_code, line_new, line_old|
-        if full_line == diff_line
+      lines = Gitlab::Diff::Parser.new.parse(mr_diff.diff.lines.to_a)
+
+      lines.each do |line|
+        if line.text == diff_line
           return true
         end
       end
@@ -213,6 +315,14 @@ class Note < ActiveRecord::Base
     diff.new_path if diff
   end
 
+  def file_path
+    if diff.new_path.present?
+      diff.new_path
+    elsif diff.old_path.present?
+      diff.old_path
+    end
+  end
+
   def diff_old_line
     line_code.split('_')[1].to_i
   end
@@ -221,17 +331,47 @@ class Note < ActiveRecord::Base
     line_code.split('_')[2].to_i
   end
 
+  def generate_line_code(line)
+    Gitlab::Diff::LineCode.generate(file_path, line.new_pos, line.old_pos)
+  end
+
   def diff_line
     return @diff_line if @diff_line
 
     if diff
-      Gitlab::DiffParser.new(diff.diff.lines.to_a, diff.new_path)
-        .each do |full_line, type, line_code, line_new, line_old|
-          @diff_line = full_line if line_code == self.line_code
+      diff_lines.each do |line|
+        if generate_line_code(line) == self.line_code
+          @diff_line = line.text
         end
+      end
     end
 
     @diff_line
+  end
+
+  def truncated_diff_lines
+    max_number_of_lines = 16
+    prev_match_line = nil
+    prev_lines = []
+
+    diff_lines.each do |line|
+      if generate_line_code(line) != self.line_code
+        if line.type == "match"
+          prev_lines.clear
+          prev_match_line = line
+        else
+          prev_lines.push(line)
+          prev_lines.shift if prev_lines.length >= max_number_of_lines
+        end
+      else
+        prev_lines << line
+        return prev_lines
+      end
+    end
+  end
+
+  def diff_lines
+    @diff_lines ||= Gitlab::Diff::Parser.new.parse(diff.diff.lines.to_a)
   end
 
   def discussion_id

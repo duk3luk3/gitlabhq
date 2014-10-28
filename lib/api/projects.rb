@@ -111,7 +111,7 @@ module API
           if @project.errors[:limit_reached].present?
             error!(@project.errors[:limit_reached], 403)
           end
-          not_found!
+          render_validation_error!(@project)
         end
       end
 
@@ -149,7 +149,24 @@ module API
         if @project.saved?
           present @project, with: Entities::Project
         else
-          not_found!
+          render_validation_error!(@project)
+        end
+      end
+
+      # Fork new project for the current user.
+      #
+      # Parameters:
+      #   id (required) - The ID of a project
+      # Example Request
+      #   POST /projects/fork/:id
+      post 'fork/:id' do
+        @forked_project =
+          ::Projects::ForkService.new(user_project,
+                                      current_user).execute
+        if @forked_project.errors.any?
+          conflict!(@forked_project.errors.messages)
+        else
+          present @forked_project, with: Entities::Project
         end
       end
 
@@ -161,7 +178,7 @@ module API
       #   DELETE /projects/:id
       delete ":id" do
         authorize! :remove_project, user_project
-        user_project.destroy
+        ::Projects::DestroyService.new(user_project, current_user, {}).execute
       end
 
       # Mark this project as forked from another

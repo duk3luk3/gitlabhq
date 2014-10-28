@@ -3,8 +3,8 @@ class Projects::TagsController < Projects::ApplicationController
   before_filter :authorize_read_project!
   before_filter :require_non_empty_project
 
-  before_filter :authorize_code_access!
-  before_filter :authorize_push!, only: [:create]
+  before_filter :authorize_download_code!
+  before_filter :authorize_push_code!, only: [:create]
   before_filter :authorize_admin_project!, only: [:destroy]
 
   def index
@@ -13,9 +13,8 @@ class Projects::TagsController < Projects::ApplicationController
   end
 
   def create
-    result = CreateTagService.new.execute(@project, params[:tag_name],
-                                          params[:ref], params[:message],
-                                          current_user)
+    result = CreateTagService.new(@project, current_user).
+      execute(params[:tag_name], params[:ref], params[:message])
     if result[:status] == :success
       @tag = result[:tag]
       redirect_to project_tags_path(@project)
@@ -34,7 +33,7 @@ class Projects::TagsController < Projects::ApplicationController
 
     respond_to do |format|
       format.html { redirect_to project_tags_path }
-      format.js { render nothing: true }
+      format.js
     end
   end
 end

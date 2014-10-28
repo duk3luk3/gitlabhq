@@ -1,5 +1,9 @@
 module Gitlab
   class Logger < ::Logger
+    def self.file_name
+      file_name_noext + '.log'
+    end
+
     def self.error(message)
       build.error(message)
     end
@@ -15,7 +19,7 @@ module Gitlab
       tail_output.split("\n")
     end
 
-    def self.read_latest_for filename
+    def self.read_latest_for(filename)
       path = Rails.root.join("log", filename)
       tail_output, _ = Gitlab::Popen.popen(%W(tail -n 2000 #{path}))
       tail_output.split("\n")

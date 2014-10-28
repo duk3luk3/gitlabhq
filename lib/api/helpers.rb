@@ -67,11 +67,15 @@ module API
       unauthorized! unless current_user
     end
 
+    def authenticate_by_gitlab_shell_token!
+      unauthorized! unless secret_token == params['secret_token']
+    end
+
     def authenticated_as_admin!
       forbidden! unless current_user.is_admin?
     end
 
-    def authorize! action, subject
+    def authorize!(action, subject)
       unless abilities.allowed?(current_user, action, subject)
         forbidden!
       end
@@ -155,7 +159,17 @@ module API
     end
 
     def not_allowed!
-      render_api_error!('Method Not Allowed', 405)
+      render_api_error!('405 Method Not Allowed', 405)
+    end
+
+    def conflict!(message = nil)
+      render_api_error!(message || '409 Conflict', 409)
+    end
+
+    def render_validation_error!(model)
+      unless model.valid?
+        render_api_error!(model.errors.messages || '400 Bad Request', 400)
+      end
     end
 
     def render_api_error!(message, status)
@@ -182,6 +196,10 @@ module API
                        abilities << Ability
                        abilities
                      end
+    end
+
+    def secret_token
+      File.read(Rails.root.join('.gitlab_shell_secret'))
     end
   end
 end

@@ -1,4 +1,4 @@
-class Admin
+class @Admin
   constructor: ->
     $('input#user_force_random_password').on 'change', (elem) ->
       elems = $('#user_password, #user_password_confirmation')
@@ -46,10 +46,8 @@ class Admin
       modal.hide()
       $('.change-owner-link').show()
 
-    $('li.users_project').bind 'ajax:success', ->
+    $('li.project_member').bind 'ajax:success', ->
       Turbolinks.visit(location.href)
 
-    $('li.users_group').bind 'ajax:success', ->
+    $('li.group_member').bind 'ajax:success', ->
       Turbolinks.visit(location.href)
-
-@Admin = Admin

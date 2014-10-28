@@ -1,5 +1,5 @@
 @dashboard
-Feature: Project shortcuts
+Feature: Project Shortcuts
   Background:
     Given I sign in as a user
     And I own a project
@@ -44,3 +44,9 @@ Feature: Project shortcuts
   Scenario: Navigate to wiki tab
     Given I press "g" and "w"
     Then the active main tab should be Wiki
+
+  @javascript
+  Scenario: Navigate to project feed
+    Given I visit my project's files page
+    Given I press "g" and "p"
+    Then the active main tab should be Home

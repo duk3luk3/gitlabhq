@@ -15,14 +15,14 @@
 #= require jquery.atwho
 #= require jquery.scrollTo
 #= require jquery.blockUI
-#= require jquery.sticky
-#= require turbolinks
 #= require jquery.turbolinks
+#= require turbolinks
 #= require bootstrap
 #= require select2
 #= require raphael
 #= require g.raphael-min
 #= require g.bar-min
+#= require chart-lib.min
 #= require branch-graph
 #= require highlight.pack
 #= require ace/ace
@@ -34,6 +34,7 @@
 #= require dropzone
 #= require semantic-ui/sidebar
 #= require mousetrap
+#= require mousetrap/pause
 #= require shortcuts
 #= require shortcuts_navigation
 #= require shortcuts_dashboard_navigation
@@ -62,7 +63,7 @@ window.extractLast = (term) ->
   return split( term ).pop()
 
 window.rstrip = (val) ->
-  return val.replace(/\s+$/, '')
+  return if val then val.replace(/\s+$/, '') else val
 
 # Disable button if text field is empty
 window.disableButtonIfEmptyField = (field_selector, button_selector) ->
@@ -149,7 +150,6 @@ $ ->
   if (flash = $(".flash-container")).length > 0
     flash.click -> $(@).fadeOut()
     flash.show()
-    setTimeout (-> flash.fadeOut()), 5000
 
   # Disable form buttons while a form is submitting
   $('body').on 'ajax:complete, ajax:beforeSend, submit', 'form', (e) ->
@@ -172,10 +172,17 @@ $ ->
   # Show/hide comments on diff
   $("body").on "click", ".js-toggle-diff-comments", (e) ->
     $(@).find('i').
-      toggleClass('icon-chevron-down').
-      toggleClass('icon-chevron-up')
+      toggleClass('fa fa-chevron-down').
+      toggleClass('fa fa-chevron-up')
     $(@).closest(".diff-file").find(".notes_holder").toggle()
     e.preventDefault()
+
+  $(document).on "click", '.js-confirm-danger', (e) ->
+    e.preventDefault()
+    btn = $(e.target)
+    text = btn.data("confirm-danger-message")
+    form = btn.closest("form")
+    new ConfirmDangerModal(form, text)
 
 (($) ->
   # Disable an element and add the 'disabled' Bootstrap class

@@ -1,4 +1,4 @@
-Feature: Project Labels
+Feature: Project Issues Labels
   Background:
     Given I sign in as a user
     And I own project "Shop"
@@ -6,8 +6,8 @@ Feature: Project Labels
     Given I visit project "Shop" labels page
 
   Scenario: I should see labels list
-    Then I should see label "bug"
-    And I should see label "feature"
+    Then I should see label 'bug'
+    And I should see label 'feature'
 
   Scenario: I create new label
     Given I visit project "Shop" new label page
@@ -45,4 +45,3 @@ Feature: Project Labels
     And I visit project "Forum" new label page
     When I submit new label 'bug'
     Then I should see label 'bug'
-

@@ -22,8 +22,8 @@
       = form_tag admin_users_path, method: :get, class: 'form-inline' do
         .form-group
           = search_field_tag :name, params[:name], placeholder: 'Name, email or username', class: 'form-control'
-        = button_tag type: 'submit', class: 'btn btn-primary' do
-          %i.icon-search
+        = button_tag class: 'btn btn-primary' do
+          %i.fa.fa-search
       %hr
       = link_to 'Reset', admin_users_path, class: "btn btn-cancel"
 
@@ -32,15 +32,35 @@
       .panel-heading
         Users (#{@users.total_count})
         .panel-head-actions
+          .dropdown.inline
+            %a.dropdown-toggle.btn{href: '#', "data-toggle" => "dropdown"}
+              %span.light sort:
+              - if @sort.present?
+                = @sort.humanize
+              - else
+                Name
+              %b.caret
+            %ul.dropdown-menu
+              %li
+                = link_to admin_users_path(sort: nil) do
+                  Name
+                = link_to admin_users_path(sort: 'recent_sign_in') do
+                  Recent sign in
+                = link_to admin_users_path(sort: 'oldest_sign_in') do
+                  Oldest sign in
+                = link_to admin_users_path(sort: 'recently_created') do
+                  Recently created
+                = link_to admin_users_path(sort: 'late_created') do
+                  Late created
           = link_to 'New User', new_admin_user_path, class: "btn btn-new"
       %ul.well-list
         - @users.each do |user|
           %li
             .list-item-name
               - if user.blocked?
-                %i.icon-lock.cred
+                %i.fa.fa-lock.cred
               - else
-                %i.icon-user.cgreen
+                %i.fa.fa-user.cgreen
               = link_to user.name, [:admin, user]
               - if user.admin?
                 %strong.cred (Admin)
@@ -48,7 +68,7 @@
                 %span.cred It's you!
             .pull-right
               %span.light
-                %i.icon-envelope
+                %i.fa.fa-envelope
                 = mail_to user.email, user.email, class: 'light'
               &nbsp;
               = link_to 'Edit', edit_admin_user_path(user), id: "edit_#{dom_id(user)}", class: "btn btn-small"

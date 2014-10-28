@@ -13,13 +13,13 @@
   = form_tag members_group_path(@group), method: :get, class: 'form-inline member-search-form'  do
     .form-group
       = search_field_tag :search, params[:search], { placeholder: 'Find existing member by name', class: 'form-control search-text-input input-mn-300' }
-    = submit_tag 'Search', class: 'btn'
+    = button_tag 'Search', class: 'btn'
 
   - if current_user && current_user.can?(:manage_group, @group)
     .pull-right
       = link_to '#', class: 'btn btn-new js-toggle-button' do
         Add members
-        %i.icon-chevron-down
+        %i.fa.fa-chevron-down
 
     .js-toggle-content.hide.new-group-member-holder
       = render "new_group_member"
@@ -32,7 +32,7 @@
       (#{@members.total_count})
   %ul.well-list
     - @members.each do |member|
-      = render 'users_groups/users_group', member: member, show_roles: show_roles, show_controls: true
+      = render 'groups/group_members/group_member', member: member, show_roles: show_roles, show_controls: true
 = paginate @members, theme: 'gitlab'
 
 :coffeescript

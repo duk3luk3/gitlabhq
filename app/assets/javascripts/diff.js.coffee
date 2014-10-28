@@ -1,4 +1,4 @@
-class Diff
+class @Diff
   UNFOLD_COUNT = 20
   constructor: ->
     $(document).on('click', '.js-unfold', (event) =>
@@ -34,14 +34,10 @@ class Diff
       $.get(link, params, (response) =>
         target.parent().replaceWith(response)
       )
-    ).ready =>
-      $(".diff-header").sticky {responsiveWidth:true, getWidthFrom: ".diff-file"}
+    )
 
   lineNumbers: (line) ->
     return ([0, 0]) unless line.children().length
     lines = line.children().slice(0, 2)
     line_numbers = ($(l).attr('data-linenumber') for l in lines)
     (parseInt(line_number) for line_number in line_numbers)
-
-
-@Diff = Diff

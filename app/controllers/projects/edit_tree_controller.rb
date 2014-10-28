@@ -1,7 +1,7 @@
 class Projects::EditTreeController < Projects::BaseTreeController
   before_filter :require_branch_head
   before_filter :blob
-  before_filter :authorize_push!
+  before_filter :authorize_push_code!
   before_filter :from_merge_request
   before_filter :after_edit_path
 
@@ -10,7 +10,8 @@ class Projects::EditTreeController < Projects::BaseTreeController
   end
 
   def update
-    result = Files::UpdateService.new(@project, current_user, params, @ref, @path).execute
+    result = Files::UpdateService.
+      new(@project, current_user, params, @ref, @path).execute
 
     if result[:status] == :success
       flash[:notice] = "Your changes have been successfully committed"
@@ -21,7 +22,7 @@ class Projects::EditTreeController < Projects::BaseTreeController
 
       redirect_to after_edit_path
     else
-      flash[:alert] = result[:error]
+      flash[:alert] = result[:message]
       render :show
     end
   end
@@ -31,7 +32,7 @@ class Projects::EditTreeController < Projects::BaseTreeController
 
     diffy = Diffy::Diff.new(@blob.data, @content, diff: '-U 3',
                             include_diff_info: true)
-    @diff = Gitlab::DiffParser.new(diffy.diff.scan(/.*\n/))
+    @diff_lines = Gitlab::Diff::Parser.new.parse(diffy.diff.scan(/.*\n/))
 
     render layout: false
   end

@@ -3,8 +3,8 @@ class Projects::BranchesController < Projects::ApplicationController
   before_filter :authorize_read_project!
   before_filter :require_non_empty_project
 
-  before_filter :authorize_code_access!
-  before_filter :authorize_push!, only: [:create, :destroy]
+  before_filter :authorize_download_code!
+  before_filter :authorize_push_code!, only: [:create, :destroy]
 
   def index
     @sort = params[:sort] || 'name'
@@ -17,10 +17,8 @@ class Projects::BranchesController < Projects::ApplicationController
   end
 
   def create
-    result = CreateBranchService.new.execute(project,
-                                             params[:branch_name],
-                                             params[:ref],
-                                             current_user)
+    result = CreateBranchService.new(project, current_user).
+        execute(params[:branch_name], params[:ref])
     if result[:status] == :success
       @branch = result[:branch]
       redirect_to project_tree_path(@project, @branch.name)
@@ -31,7 +29,7 @@ class Projects::BranchesController < Projects::ApplicationController
   end
 
   def destroy
-    DeleteBranchService.new.execute(project, params[:id], current_user)
+    DeleteBranchService.new(project, current_user).execute(params[:id])
     @branch_name = params[:id]
 
     respond_to do |format|

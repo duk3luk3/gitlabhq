@@ -2,25 +2,19 @@
 #
 # Table name: services
 #
-#  id          :integer          not null, primary key
-#  type        :string(255)
-#  title       :string(255)
-#  token       :string(255)
-#  project_id  :integer          not null
-#  created_at  :datetime
-#  updated_at  :datetime
-#  active      :boolean          default(FALSE), not null
-#  project_url :string(255)
-#  subdomain   :string(255)
-#  room        :string(255)
-#  recipients  :text
-#  api_key     :string(255)
+#  id         :integer          not null, primary key
+#  type       :string(255)
+#  title      :string(255)
+#  project_id :integer          not null
+#  created_at :datetime
+#  updated_at :datetime
+#  active     :boolean          default(FALSE), not null
+#  properties :text
 #
 
 class SlackService < Service
-  validates :room, presence: true, if: :activated?
-  validates :subdomain, presence: true, if: :activated?
-  validates :token, presence: true, if: :activated?
+  prop_accessor :webhook
+  validates :webhook, presence: true, if: :activated?
 
   def title
     'Slack'
@@ -36,9 +30,7 @@ class SlackService < Service
 
   def fields
     [
-      { type: 'text', name: 'subdomain', placeholder: '' },
-      { type: 'text', name: 'token',     placeholder: '' },
-      { type: 'text', name: 'room',      placeholder: 'Ex. #general' },
+      { type: 'text', name: 'webhook', placeholder: '' }
     ]
   end
 
@@ -48,10 +40,14 @@ class SlackService < Service
       project_name: project_name
     ))
 
-    notifier = Slack::Notifier.new(subdomain, token)
-    notifier.channel = room
-    notifier.username = 'GitLab'
-    notifier.ping(message.pretext, attachments: message.attachments)
+    credentials = webhook.match(/([\w-]*).slack.com.*services\/(.*)/)
+
+    if credentials.present?
+      subdomain =  credentials[1]
+      token = credentials[2].split("token=").last
+      notifier = Slack::Notifier.new(subdomain, token)
+      notifier.ping(message.pretext, attachments: message.attachments)
+    end
   end
 
   private

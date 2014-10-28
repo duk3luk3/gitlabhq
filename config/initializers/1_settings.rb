@@ -56,8 +56,25 @@ end
 # Default settings
 Settings['ldap'] ||= Settingslogic.new({})
 Settings.ldap['enabled'] = false if Settings.ldap['enabled'].nil?
-Settings.ldap['allow_username_or_email_login'] = false if Settings.ldap['allow_username_or_email_login'].nil?
 
+# backwards compatibility, we only have one host
+if Settings.ldap['enabled'] || Rails.env.test?
+  if Settings.ldap['host'].present?
+    server = Settings.ldap.except('sync_time')
+    server['provider_name'] = 'ldap'
+    Settings.ldap['servers'] = {
+      'ldap' => server
+    }
+  end
+
+  Settings.ldap['servers'].each do |key, server|
+    server['label'] ||= 'LDAP'
+    server['allow_username_or_email_login'] = false if server['allow_username_or_email_login'].nil?
+    server['active_directory'] = true if server['active_directory'].nil?
+    server['provider_name'] ||= "ldap#{key}".downcase
+    server['provider_class'] = OmniAuth::Utils.camelize(server['provider_name'])
+  end
+end
 
 Settings['omniauth'] ||= Settingslogic.new({})
 Settings.omniauth['enabled']      = false if Settings.omniauth['enabled'].nil?
@@ -78,6 +95,7 @@ Settings.gitlab['https']        = false if Settings.gitlab['https'].nil?
 Settings.gitlab['port']       ||= Settings.gitlab.https ? 443 : 80
 Settings.gitlab['relative_url_root'] ||= ENV['RAILS_RELATIVE_URL_ROOT'] || ''
 Settings.gitlab['protocol']   ||= Settings.gitlab.https ? "https" : "http"
+Settings.gitlab['email_enabled'] ||= true if Settings.gitlab['email_enabled'].nil?
 Settings.gitlab['email_from'] ||= "gitlab@#{Settings.gitlab.host}"
 Settings.gitlab['url']        ||= Settings.send(:build_gitlab_url)
 Settings.gitlab['user']       ||= 'git'
@@ -86,12 +104,14 @@ Settings.gitlab['user_home']  ||= begin
 rescue ArgumentError # no user configured
   '/home/' + Settings.gitlab['user']
 end
+Settings.gitlab['time_zone']  ||= nil
 Settings.gitlab['signup_enabled'] ||= false
 Settings.gitlab['signin_enabled'] ||= true if Settings.gitlab['signin_enabled'].nil?
 Settings.gitlab['restricted_visibility_levels'] = Settings.send(:verify_constant_array, Gitlab::VisibilityLevel, Settings.gitlab['restricted_visibility_levels'], [])
 Settings.gitlab['username_changing_enabled'] = true if Settings.gitlab['username_changing_enabled'].nil?
 Settings.gitlab['issue_closing_pattern'] = '([Cc]lose[sd]|[Ff]ixe[sd]) #(\d+)' if Settings.gitlab['issue_closing_pattern'].nil?
 Settings.gitlab['default_projects_features'] ||= {}
+Settings.gitlab['webhook_timeout'] ||= 10
 Settings.gitlab.default_projects_features['issues']         = true if Settings.gitlab.default_projects_features['issues'].nil?
 Settings.gitlab.default_projects_features['merge_requests'] = true if Settings.gitlab.default_projects_features['merge_requests'].nil?
 Settings.gitlab.default_projects_features['wiki']           = true if Settings.gitlab.default_projects_features['wiki'].nil?
@@ -128,6 +148,11 @@ Settings.gitlab_shell['ssh_path_prefix'] ||= Settings.send(:build_gitlab_shell_s
 Settings['backup'] ||= Settingslogic.new({})
 Settings.backup['keep_time']  ||= 0
 Settings.backup['path']         = File.expand_path(Settings.backup['path'] || "tmp/backups/", Rails.root)
+Settings.backup['upload'] ||= Settingslogic.new({'remote_directory' => nil, 'connection' => nil})
+# Convert upload connection settings to use symbol keys, to make Fog happy
+if Settings.backup['upload']['connection']
+  Settings.backup['upload']['connection'] = Hash[Settings.backup['upload']['connection'].map { |k, v| [k.to_sym, v] }]
+end
 
 #
 # Git

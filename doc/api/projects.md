@@ -248,6 +248,7 @@ POST /projects
 Parameters:
 
 - `name` (required) - new project name
+- `path` (optional) - custom repository name for new project. By default generated based on name
 - `namespace_id` (optional) - namespace for the new project (defaults to user)
 - `description` (optional) - short project description
 - `issues_enabled` (optional)
@@ -279,6 +280,18 @@ Parameters:
 - `public` (optional) - if `true` same as setting visibility_level = 20
 - `visibility_level` (optional)
 - `import_url` (optional)
+
+### Fork project
+
+Forks a project into the user namespace of the authenticated user.
+
+```
+POST /projects/fork/:id
+```
+
+Parameters:
+
+- `id` (required) - The ID of the project to be forked
 
 ### Remove project
 
@@ -434,6 +447,7 @@ Parameters:
 - `push_events` - Trigger hook on push events
 - `issues_events` - Trigger hook on issues events
 - `merge_requests_events` - Trigger hook on merge_requests events
+- `tag_push_events` - Trigger hook on push_tag events
 
 ### Edit project hook
 
@@ -451,6 +465,7 @@ Parameters:
 - `push_events` - Trigger hook on push events
 - `issues_events` - Trigger hook on issues events
 - `merge_requests_events` - Trigger hook on merge_requests events
+- `tag_push_events` - Trigger hook on push_tag events
 
 ### Delete project hook
 

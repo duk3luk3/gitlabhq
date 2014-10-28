@@ -15,22 +15,31 @@ module Backup
 
         if project.empty_repo?
           puts "[SKIPPED]".cyan
-        elsif system(*%W(git --git-dir=#{path_to_repo(project)} bundle create #{path_to_bundle(project)} --all), silent)
-          puts "[DONE]".green
         else
-          puts "[FAILED]".red
+          output, status = Gitlab::Popen.popen(%W(git --git-dir=#{path_to_repo(project)} bundle create #{path_to_bundle(project)} --all))
+          if status.zero?
+            puts "[DONE]".green
+          else
+            puts "[FAILED]".red
+            puts output
+            abort 'Backup failed'
+          end
         end
 
         wiki = ProjectWiki.new(project)
 
         if File.exists?(path_to_repo(wiki))
           print " * #{wiki.path_with_namespace} ... "
-          if wiki.empty?
+          if wiki.repository.empty?
             puts " [SKIPPED]".cyan
-          elsif system(*%W(git --git-dir=#{path_to_repo(wiki)} bundle create #{path_to_bundle(wiki)} --all), silent)
-            puts " [DONE]".green
           else
-            puts " [FAILED]".red
+            output, status = Gitlab::Popen.popen(%W(git --git-dir=#{path_to_repo(wiki)} bundle create #{path_to_bundle(wiki)} --all))
+            if status.zero?
+              puts " [DONE]".green
+            else
+              puts " [FAILED]".red
+              abort 'Backup failed'
+            end
           end
         end
       end
@@ -54,6 +63,7 @@ module Backup
           puts "[DONE]".green
         else
           puts "[FAILED]".red
+          abort 'Restore failed'
         end
 
         wiki = ProjectWiki.new(project)
@@ -64,12 +74,13 @@ module Backup
             puts " [DONE]".green
           else
             puts " [FAILED]".red
+            abort 'Restore failed'
           end
         end
       end
 
       print 'Put GitLab hooks in repositories dirs'.yellow
-      if system("#{Gitlab.config.gitlab_shell.path}/support/rewrite-hooks.sh", Gitlab.config.gitlab_shell.repos_path)
+      if system("#{Gitlab.config.gitlab_shell.path}/bin/create-hooks")
         puts " [DONE]".green
       else
         puts " [FAILED]".red

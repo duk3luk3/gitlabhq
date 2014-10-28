@@ -18,7 +18,7 @@ Below we describe the contributing process to GitLab for two reasons. So that co
 - Responds to merge requests the issue team mentions them in and monitors for new merge requests
 - Provides feedback to the merge request submitter to improve the merge request (style, tests, etc.)
 - Mark merge requests 'ready-for-merge' when they meet the contribution guidelines
-- Mention developer(s) based on the [list of members and their specialities](https://www.gitlab.com/core-team/)
+- Mention developer(s) based on the [list of members and their specialities](https://about.gitlab.com/core-team/)
 - Closes merge requests with no feedback from the reporter for two weeks
 
 ## Priorities of the issue team
@@ -30,7 +30,7 @@ Below we describe the contributing process to GitLab for two reasons. So that co
 
 ## Mentioning people
 
-The most important thing is making sure valid issues receive feedback from the development team. Therefore the priority is mentioning developers that can help on those issue. Please select someone with relevant experience from [GitLab core team](https://www.gitlab.com/core-team/). If there is nobody mentioned with that expertise look in the commit history for the affected files to find someone. Avoid mentioning the lead developer, this is the person that is least likely to give a timely response. If the involvement of the lead developer is needed the other core team members will mention this person.
+The most important thing is making sure valid issues receive feedback from the development team. Therefore the priority is mentioning developers that can help on those issue. Please select someone with relevant experience from [GitLab core team](https://about.gitlab.com/core-team/). If there is nobody mentioned with that expertise look in the commit history for the affected files to find someone. Avoid mentioning the lead developer, this is the person that is least likely to give a timely response. If the involvement of the lead developer is needed the other core team members will mention this person.
 
 ## Workflow labels
 
@@ -79,7 +79,7 @@ Thanks for the issue report but we only support issues for the latest stable ver
 
 ### Support requests and configuration questions
 
-Thanks for your interest in GitLab. We don't use the issue tracker for support requests and configuration questions. Please use the \[support forum\]\(https://groups.google.com/forum/#!forum/gitlabhq), \[Stack Overflow\]\(http://stackoverflow.com/questions/tagged/gitlab), the #gitlab IRC channel on Freenode or the http://www.gitlab.com paid services for this purpose. Have a look at the \[contribution guidelines\]\(https://gitlab.com/gitlab-org/gitlab-ce/blob/master/CONTRIBUTING.md) for more information.
+Thanks for your interest in GitLab. We don't use the issue tracker for support requests and configuration questions. Please use the \[support forum\]\(https://groups.google.com/forum/#!forum/gitlabhq), \[Stack Overflow\]\(http://stackoverflow.com/questions/tagged/gitlab), the #gitlab IRC channel on Freenode or the http://about.gitlab.com paid services for this purpose. Have a look at the \[contribution guidelines\]\(https://gitlab.com/gitlab-org/gitlab-ce/blob/master/CONTRIBUTING.md) for more information.
 
 ### Code format
 
@@ -87,7 +87,7 @@ Please use ``` to format console output, logs, and code as it's very hard to rea
 
 ### Issue fixed in newer version
 
-Thanks for the issue report. This issue has already been fixed in newer versions of GitLab. Due to the size of this project and our limited resources we are only able to support the latest stable release as outlined in our \[contributing guidelines\]\(https://gitlab.com/gitlab-org/gitlab-ce/blob/master/CONTRIBUTING.md#issue-tracker). In order to get this bug fix and enjoy many new features please \[upgrade\]\(https://github.com/gitlabhq/gitlabhq/tree/master/doc/update). If you still experience issues at that time please open a new issue following our issue tracker guidelines found in the \[contributing guidelines\]\(https://gitlab.com/gitlab-org/gitlab-ce/blob/master/CONTRIBUTING.md#issue-tracker-guidelines).
+Thanks for the issue report. This issue has already been fixed in newer versions of GitLab. Due to the size of this project and our limited resources we are only able to support the latest stable release as outlined in our \[contributing guidelines\]\(https://gitlab.com/gitlab-org/gitlab-ce/blob/master/CONTRIBUTING.md#issue-tracker). In order to get this bug fix and enjoy many new features please \[upgrade\]\(https://gitlab.com/gitlab-org/gitlab-ce/tree/master/doc/update). If you still experience issues at that time please open a new issue following our issue tracker guidelines found in the \[contributing guidelines\]\(https://gitlab.com/gitlab-org/gitlab-ce/blob/master/CONTRIBUTING.md#issue-tracker-guidelines).
 
 ### Improperly formatted merge request
 
